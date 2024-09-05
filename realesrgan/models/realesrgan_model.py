@@ -167,8 +167,7 @@ class RealESRGANModel(SRGANModel):
 
             # random crop
             gt_size = self.opt['gt_size']
-            (self.gt, self.gt_usm), self.lq = paired_random_crop([self.gt, self.gt_usm], self.lq, gt_size,
-                                                                 self.opt['scale'])
+            # (self.gt, self.gt_usm), self.lq = paired_random_crop([self.gt, self.gt_usm], self.lq, gt_size, self.opt['scale'])
 
             # training pair pool
             self._dequeue_and_enqueue()
@@ -210,6 +209,10 @@ class RealESRGANModel(SRGANModel):
         l_g_total = 0
         loss_dict = OrderedDict()
         if (current_iter % self.net_d_iters == 0 and current_iter > self.net_d_init_iters):
+            # print("\n\nCurrently in line 212 in realesrgan/models/realesrgan_model.py")
+            # print("self.percep_gt: ", percep_gt.shape)
+            # print("self.output: ", self.output.shape)
+            # print("\n\n")
             # pixel loss
             if self.cri_pix:
                 l_g_pix = self.cri_pix(self.output, l1_gt)

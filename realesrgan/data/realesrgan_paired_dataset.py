@@ -1,11 +1,66 @@
 import os
+import cv2, random
+import numpy as np
+import torchvision.transforms as transforms
 from basicsr.data.data_util import paired_paths_from_folder, paired_paths_from_lmdb
-from basicsr.data.transforms import augment, paired_random_crop
 from basicsr.utils import FileClient, imfrombytes, img2tensor
 from basicsr.utils.registry import DATASET_REGISTRY
 from torch.utils import data as data
 from torchvision.transforms.functional import normalize
 
+def rotate_image(image, angle):
+    h, w, _ = image.shape
+    center = (w / 2, h / 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(image, M, (w, h))
+    return rotated
+
+def random_blur(image, kernel_size=random.choice([(3, 3), (5, 5), (7, 7)])):
+    return cv2.GaussianBlur(image, kernel_size, 0)
+
+def add_gaussian_noise(image, mean=0, sigma=0.05):
+    noise = np.random.normal(mean, sigma, image.shape)
+    noisy_image = np.clip(image + noise, 0, 1).astype(np.float32)
+    return noisy_image
+
+def add_poisson_noise(image):
+    vals = len(np.unique(image))
+    vals = 2 ** np.ceil(np.log2(vals))
+    noisy = np.random.poisson(image * vals) / float(vals)
+    return noisy
+
+def augment_image(img_gt, img_lq):
+    # print("Augmenting image")
+    # Random Horizontal Flip
+    if random.random() < 0.5:
+        img_gt = np.fliplr(img_gt)
+        img_lq = np.fliplr(img_lq)
+
+    # Random Rotation
+    if random.random() < 0.5:
+        angle = random.uniform(-5, 5)
+        img_gt = rotate_image(img_gt, angle)
+        img_lq = rotate_image(img_lq, angle)
+
+     # Color Jittering
+    color_jitter = transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)
+    img_gt_uint8 = (img_gt * 255).astype(np.uint8)
+    img_gt_uint8 = np.array(color_jitter(transforms.ToPILImage()(img_gt_uint8)))
+    img_gt = img_gt_uint8.astype(np.float32) / 255.0
+
+    # Random Blur
+    if random.random() < 0.5:
+        img_lq = random_blur(img_lq)
+
+    # Add Gaussian Noise
+    if random.random() < 0.5:
+        img_lq = add_gaussian_noise(img_lq)
+
+    # # Add Poisson Noise
+    # if random.random() < 0.5:
+    #     img_lq = add_poisson_noise(img_lq)
+
+    return img_gt, img_lq
 
 @DATASET_REGISTRY.register()
 class RealESRGANPairedDataset(data.Dataset):
@@ -87,13 +142,16 @@ class RealESRGANPairedDataset(data.Dataset):
         img_bytes = self.file_client.get(lq_path, 'lq')
         img_lq = imfrombytes(img_bytes, float32=True)
 
-        # augmentation for training
-        if self.opt['phase'] == 'train':
-            gt_size = self.opt['gt_size']
-            # random crop
-            img_gt, img_lq = paired_random_crop(img_gt, img_lq, gt_size, scale, gt_path)
-            # flip, rotation
-            img_gt, img_lq = augment([img_gt, img_lq], self.opt['use_hflip'], self.opt['use_rot'])
+        gt_size = self.opt['gt_size']
+        assert img_gt.shape[:2] == (gt_size, gt_size), f"Error: GT image size {img_gt.shape[:2]} is not the same as gt_size {gt_size}"
+
+        # # augmentation for training
+        # if self.opt['phase'] == 'train':
+        #     # random crop
+        #     # img_gt, img_lq = paired_random_crop(img_gt, img_lq, gt_size, scale, gt_path)
+        #     # flip, rotation
+        #     # img_gt, img_lq = augment([img_gt, img_lq], self.opt['use_hflip'], self.opt['use_rot'])
+        #     img_gt, img_lq = augment_image(img_gt, img_lq)
 
         # BGR to RGB, HWC to CHW, numpy to tensor
         img_gt, img_lq = img2tensor([img_gt, img_lq], bgr2rgb=True, float32=True)

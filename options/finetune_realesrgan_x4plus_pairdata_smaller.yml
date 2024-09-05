@@ -1,5 +1,5 @@
 # general settings
-name: finetune_RealESRGANx4plus_Orig
+name: finetune_RealESRGANx4Smaller
 model_type: RealESRGANModel
 scale: 4
 num_gpu: auto
@@ -29,7 +29,7 @@ datasets:
 
     # data loader
     use_shuffle: true
-    num_worker_per_gpu: 12
+    num_worker_per_gpu: 8
     batch_size_per_gpu: 2
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
@@ -49,22 +49,22 @@ network_g:
   num_in_ch: 3
   num_out_ch: 3
   num_feat: 64
-  num_block: 23
+  num_block: 2
   num_grow_ch: 32
 
 network_d:
   type: UNetDiscriminatorSN
   num_in_ch: 3
-  num_feat: 64
+  num_feat: 32
   skip_connection: True
 
 # path
 path:
   # use the pre-trained Real-ESRNet model
-  pretrain_network_g: experiments/pretrained_models/RealESRGAN_x4plus.pth
+  # pretrain_network_g: experiments/pretrained_models/RealESRGAN_x4plus_anime_6B.pth
   param_key_g: params_ema
-  strict_load_g: true
-  pretrain_network_d: experiments/pretrained_models/RealESRGAN_x4plus_netD.pth
+  strict_load_g: false
+  # pretrain_network_d: experiments/pretrained_models/RealESRGAN_x4plus_netD.pth
   param_key_d: params
   strict_load_d: true
   resume_state: ~
@@ -138,7 +138,7 @@ train:
 # logging settings
 logger:
   print_freq: 100
-  save_checkpoint_freq: !!float 5e3
+  save_checkpoint_freq: !!float 1e3
   use_tb_logger: true
   wandb:
     project: ~

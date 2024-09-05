@@ -4,6 +4,7 @@ import glob
 import mimetypes
 import numpy as np
 import os
+import time
 import shutil
 import subprocess
 import torch
@@ -202,7 +203,8 @@ def inference_video(args, video_save_path, device=None, total_workers=1, worker_
         ]
 
     # ---------------------- determine model paths ---------------------- #
-    model_path = os.path.join('weights', args.model_name + '.pth')
+    model_path = args.model_path if args.model_path is not None else os.path.join('weights', args.model_name + '.pth')
+    print(f'model_path set as {model_path}')
     if not os.path.isfile(model_path):
         ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
         for url in file_url:
@@ -338,6 +340,7 @@ def main():
         help=('Model names: realesr-animevideov3 | RealESRGAN_x4plus_anime_6B | RealESRGAN_x4plus | RealESRNet_x4plus |'
               ' RealESRGAN_x2plus | realesr-general-x4v3'
               'Default:realesr-animevideov3'))
+    parser.add_argument('-m', '--model_path', type=str, help='Path to the pre-trained model')
     parser.add_argument('-o', '--output', type=str, default='results', help='Output folder')
     parser.add_argument(
         '-dn',
@@ -395,4 +398,6 @@ def main():
 
 
 if __name__ == '__main__':
+    start = time.time()
     main()
+    print(f"Time taken: {time.time() - start} seconds")

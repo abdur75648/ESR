@@ -2,6 +2,7 @@ import argparse
 import cv2
 import glob
 import os
+import time
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from basicsr.utils.download_util import load_file_from_url
 
@@ -83,6 +84,8 @@ def main():
             'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-wdn-x4v3.pth',
             'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth'
         ]
+    else:
+        raise NotImplementedError(f'Model {args.model_name} is not implemented.')
 
     # determine model paths
     if args.model_path is not None:
@@ -163,4 +166,6 @@ def main():
 
 
 if __name__ == '__main__':
+    start = time.time()
     main()
+    print(f"Time taken: {time.time() - start} seconds")
