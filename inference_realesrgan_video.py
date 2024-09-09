@@ -190,6 +190,10 @@ def inference_video(args, video_save_path, device=None, total_workers=1, worker_
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         netscale = 2
         file_url = ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth']
+    elif args.model_name == 'RealESRGAN_x2plus_small':  # x2 RRDBNet model (Anime)
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=2)
+        netscale = 2
+        file_url = None
     elif args.model_name == 'realesr-animevideov3':  # x4 VGG-style model (XS size)
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4, act_type='prelu')
         netscale = 4
@@ -259,7 +263,8 @@ def inference_video(args, video_save_path, device=None, total_workers=1, worker_
         img = reader.get_frame()
         if img is None:
             break
-
+        if args.blur_input:
+            img = cv2.GaussianBlur(img, (3, 3), 1.0)
         try:
             if args.face_enhance:
                 _, _, output = face_enhancer.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
@@ -332,6 +337,7 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', type=str, default='inputs', help='Input video, image or folder')
+    parser.add_argument('--blur_input', action='store_true', help='Add slight Gaussian blur to input image')
     parser.add_argument(
         '-n',
         '--model_name',

@@ -4,7 +4,7 @@ import os
 
 
 def main(args):
-    txt_file = open(args.meta_info, 'w')
+    txt_file = open(args.meta_info_file, 'w')
     # sca images
     img_paths_gt = sorted(glob.glob(os.path.join(args.input[0], '*')))
     img_paths_lq = sorted(glob.glob(os.path.join(args.input[1], '*')))
@@ -27,19 +27,19 @@ if __name__ == '__main__':
     parser.add_argument(
         '--input',
         nargs='+',
-        default=['datasets/MyselfProcessed/gt_1024', 'datasets/MyselfProcessed/img_256'],
+        default=['datasets/Prasanna/gt', 'datasets/Prasanna/img_512'],
         help='Input folder, should be [gt_folder, lq_folder]')
     parser.add_argument('--root', nargs='+', default=[None, None], help='Folder root, will use the ')
     parser.add_argument(
-        '--meta_info',
+        '--meta_info_file',
         type=str,
-        default='datasets/MyselfProcessed/meta_info_myself_pair.txt',
+        required=True,
         help='txt path for meta info')
     args = parser.parse_args()
 
     assert len(args.input) == 2, 'Input folder should have two elements: gt folder and lq folder'
     assert len(args.root) == 2, 'Root path should have two elements: root for gt folder and lq folder'
-    os.makedirs(os.path.dirname(args.meta_info), exist_ok=True)
+    os.makedirs(os.path.dirname(args.meta_info_file), exist_ok=True)
     for i in range(2):
         if args.input[i].endswith('/'):
             args.input[i] = args.input[i][:-1]

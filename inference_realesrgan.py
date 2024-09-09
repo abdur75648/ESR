@@ -15,6 +15,7 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', type=str, default='inputs', help='Input image or folder')
+    parser.add_argument('--blur_input', action='store_true', help='Add slight Gaussian blur to input image')
     parser.add_argument(
         '-n',
         '--model_name',
@@ -73,6 +74,10 @@ def main():
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
         netscale = 2
         file_url = ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth']
+    elif args.model_name == 'RealESRGAN_x2plus_small':  # x2 RRDBNet model (Anime)
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=2)
+        netscale = 2
+        file_url = None
     elif args.model_name == 'realesr-animevideov3':  # x4 VGG-style model (XS size)
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=4, act_type='prelu')
         netscale = 4
@@ -138,6 +143,8 @@ def main():
         print('Testing', idx, imgname)
 
         img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        if args.blur_input:
+            img = cv2.GaussianBlur(img, (3, 3), 1.0)
         if len(img.shape) == 3 and img.shape[2] == 4:
             img_mode = 'RGBA'
         else:

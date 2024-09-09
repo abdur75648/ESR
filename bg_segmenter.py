@@ -16,7 +16,7 @@ class MediapipeSegmenter:
             os.system(f"wget https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite")
             os.system(f"mv selfie_multiclass_256x256.tflite {model_path}")
             print("Download success")
-        
+
         base_options = BaseOptions(model_asset_path=model_path)
         self.options = vision.ImageSegmenterOptions(
             base_options=base_options,
@@ -48,9 +48,10 @@ if __name__ == '__main__':
     # segmap = seg_model.segment_image(img)
     # green_screen_img = seg_model.apply_green_screen(img, segmap)
     # cv2.imwrite('output_image.jpg', cv2.cvtColor(green_screen_img, cv2.COLOR_RGB2BGR))
-    
-    input_dir = "MyselfProcessed/gt_imgs"
-    output_dir = "MyselfProcessed/gt"
+
+    input_dir = "datasets/Lana/LanaOrig"
+    output_dir = "datasets/Lana/Lana2160"
+    os.makedirs(output_dir, exist_ok=True)
     img_extensions = [".jpg", ".jpeg", ".png"]
     seg_model = MediapipeSegmenter()
     ### Without Multiprocessing ###
@@ -65,8 +66,8 @@ if __name__ == '__main__':
     #     output_path = os.path.join(output_dir, img_name)
     #     cv2.imwrite(output_path, cv2.cvtColor(green_screen_img, cv2.COLOR_RGB2BGR))
     #     print(f"Saved {output_path}")
-    
-    
+
+
     ### With Multiprocessing ###
     cpu_count = os.cpu_count()
     print(f"Using {cpu_count} cores for parallel processing")
@@ -81,6 +82,6 @@ if __name__ == '__main__':
         output_path = os.path.join(output_dir, img_name)
         cv2.imwrite(output_path, cv2.cvtColor(green_screen_img, cv2.COLOR_RGB2BGR))
         print(f"Saved {output_path}")
-    
+
     with Pool(cpu_count) as p:
         list(tqdm(p.imap(process_img, os.listdir(input_dir)), total=len(os.listdir(input_dir))) )
