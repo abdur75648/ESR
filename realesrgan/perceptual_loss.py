@@ -3,8 +3,10 @@ import torch.nn.functional as F
 from realesrgan.loss_util_gfpp import _vgg19, _vgg_face
 from realesrgan.loss_util_gfpp import apply_vggface_normalization
 from realesrgan.loss_util_gfpp import apply_imagenet_normalization
+from basicsr.utils.registry import LOSS_REGISTRY
 
-class PerceptualLoss(nn.Module):
+@LOSS_REGISTRY.register()
+class PerceptualLossGFPP(nn.Module):
     def __init__(
         self,
         layers_weight={"relu_1_1": 0.03125, "relu_2_1": 0.0625, "relu_3_1": 0.125, "relu_4_1": 0.25, "relu_5_1": 1.0},
@@ -25,6 +27,7 @@ class PerceptualLoss(nn.Module):
         self.include_style_loss = include_style_loss
         self.vgg19.eval()
         self.vggface.eval()
+        print("Perceptual Loss GFPP initialized")
 
     def _gram_matrix(self, features):
         (b, ch, h, w) = features.size()
@@ -33,7 +36,9 @@ class PerceptualLoss(nn.Module):
         gram = features.bmm(features_t) / (ch * h * w)
         return gram
 
-    def forward(self, input, target):
+    def forward(self, input, target, face_coords_xywh):
+        # print("input shape:", input.shape)
+        # print("target shape:", target.shape)
         # if input.shape[-1] != 512:
         #     input = F.interpolate(input, mode="bilinear", size=(512, 512), align_corners=False)
         #     target = F.interpolate(target, mode="bilinear", size=(512, 512), align_corners=False)
@@ -42,18 +47,29 @@ class PerceptualLoss(nn.Module):
         self.vggface.eval()
         loss = 0
 
-        # Extract VGG-Face features
-        features_vggface_input = self.vggface(apply_vggface_normalization(input))
-        features_vggface_target = self.vggface(apply_vggface_normalization(target))
+        ### Old Version -> Extract VGG-Face features without cropping
+        # features_vggface_input = self.vggface(apply_vggface_normalization(input))
+        # features_vggface_target = self.vggface(apply_vggface_normalization(target))
+
+        ### New Version -> Extract VGG-Face features with cropping using face_coords_xywh
+        x, y, w, h = face_coords_xywh
+        input_face = input[:, :, y:y+h, x:x+w]
+        target_face = target[:, :, y:y+h, x:x+w]
+        features_vggface_input = self.vggface(apply_vggface_normalization(input_face))
+        features_vggface_target = self.vggface(apply_vggface_normalization(target_face))
+        # print("VGG-Face Features:")
+        # for key, feat in features_vggface_input.items():
+        #     print(key, feat.shape)
+
 
         # Extract VGG-19 features
         input = apply_imagenet_normalization(input)
         target = apply_imagenet_normalization(target)
         features_vgg19_input = self.vgg19(input)
         features_vgg19_target = self.vgg19(target)
-        print("VGG-19 Features:")
-        for key, feat in features_vgg19_input.items():
-            print(key, feat.shape)
+        # print("VGG-19 Features:")
+        # for key, feat in features_vgg19_input.items():
+        #     print(key, feat.shape)
 
         for layer, weight in self.layers_weight.items():
             # VGG-Face Perceptual Loss
@@ -78,4 +94,4 @@ class PerceptualLoss(nn.Module):
             features_vgg19_target = self.vgg19(target)
             loss += weight * self.criterion(features_vgg19_input[layer], features_vgg19_target[layer].detach())
 
-        return loss
+        return loss, None

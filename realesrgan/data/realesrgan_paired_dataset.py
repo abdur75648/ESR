@@ -25,7 +25,7 @@ def random_resize(image):
     resized_image = cv2.resize(resized_image, (image.shape[1], image.shape[0]), interpolation=interpolation)
     return resized_image
 
-def add_gaussian_noise(image, mean=0, sigma=0.05):
+def add_gaussian_noise(image, mean=0, sigma=0.1):
     noise = np.random.normal(mean, sigma, image.shape)
     noisy_image = np.clip(image + noise, 0, 1).astype(np.float32)
     return noisy_image
@@ -117,27 +117,41 @@ class RealESRGANPairedDataset(data.Dataset):
         self.gt_folder, self.lq_folder = opt['dataroot_gt'], opt['dataroot_lq']
         self.filename_tmpl = opt['filename_tmpl'] if 'filename_tmpl' in opt else '{}'
 
-        # file client (lmdb io backend)
-        if self.io_backend_opt['type'] == 'lmdb':
-            self.io_backend_opt['db_paths'] = [self.lq_folder, self.gt_folder]
-            self.io_backend_opt['client_keys'] = ['lq', 'gt']
-            self.paths = paired_paths_from_lmdb([self.lq_folder, self.gt_folder], ['lq', 'gt'])
-        elif 'meta_info' in self.opt and self.opt['meta_info'] is not None:
+        if 'meta_info' in self.opt and self.opt['meta_info'] is not None:
             # disk backend with meta_info
             # Each line in the meta_info describes the relative path to an image
+
+            # ## Old Version ## File Format 1 ## gt_path, lq_path
+            # # gt/00000001.png, img_512/00000001.png
+            # # gt/00000002.png, img_512/00000002.png
+            # # gt/00000003.png, img_512/00000003.png
+            # with open(self.opt['meta_info']) as fin:
+            #     paths = [line.strip() for line in fin]
+            # self.paths = []
+            # self.coords = None # No coordinates in previous version
+            # for path in paths:
+            #     gt_path, lq_path = path.split(', ')
+            #     gt_path = os.path.join(self.gt_folder, gt_path)
+            #     lq_path = os.path.join(self.lq_folder, lq_path)
+            #     self.paths.append(dict([('gt_path', gt_path), ('lq_path', lq_path)]))
+
+            ## New Version ## File Format 2 ## gt_path, lq_path, x, y, w, h
+            # gt/00000001.png, img_512/00000001.png, 268, 180, 463, 463
+            # gt/00000002.png, img_512/00000002.png, 272, 179, 455, 455
+            # gt/00000003.png, img_512/00000003.png, 274, 179, 451, 451
             with open(self.opt['meta_info']) as fin:
-                paths = [line.strip() for line in fin]
+                lines = [line.strip() for line in fin]
             self.paths = []
-            for path in paths:
-                gt_path, lq_path = path.split(', ')
+            self.coords = []
+            for line in lines:
+                gt_path, lq_path, x, y, w, h = line.split(', ')
                 gt_path = os.path.join(self.gt_folder, gt_path)
                 lq_path = os.path.join(self.lq_folder, lq_path)
                 self.paths.append(dict([('gt_path', gt_path), ('lq_path', lq_path)]))
+                self.coords.append([int(x), int(y), int(w), int(h)])
+
         else:
-            # disk backend
-            # it will scan the whole folder to get meta info
-            # it will be time-consuming for folders with too many files. It is recommended using an extra meta txt file
-            self.paths = paired_paths_from_folder([self.lq_folder, self.gt_folder], ['lq', 'gt'], self.filename_tmpl)
+            raise NotImplementedError('Only support meta_info')
 
     def __getitem__(self, index):
         if self.file_client is None:
@@ -172,7 +186,7 @@ class RealESRGANPairedDataset(data.Dataset):
             normalize(img_lq, self.mean, self.std, inplace=True)
             normalize(img_gt, self.mean, self.std, inplace=True)
 
-        return {'lq': img_lq, 'gt': img_gt, 'lq_path': lq_path, 'gt_path': gt_path}
+        return {'lq': img_lq, 'gt': img_gt, 'lq_path': lq_path, 'gt_path': gt_path, 'coords': self.coords[index]}
 
     def __len__(self):
         return len(self.paths)

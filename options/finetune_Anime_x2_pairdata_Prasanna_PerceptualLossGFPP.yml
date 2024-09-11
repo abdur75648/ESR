@@ -1,7 +1,7 @@
 # general settings
-name: Aug_Anime_LowAugWithResize
+name: Anime_x2_pairdata_Prasanna_PerceptualLossGFPP
 model_type: RealESRGANModel
-scale: 4
+scale: 2
 num_gpu: auto
 manual_seed: 0
 
@@ -17,9 +17,9 @@ datasets:
   train:
     name: DIV2K
     type: RealESRGANPairedDataset
-    dataroot_gt: datasets/MyselfProcessed
-    dataroot_lq: datasets/MyselfProcessed
-    meta_info: datasets/MyselfProcessed/meta_info_myself_pair.txt
+    dataroot_gt: datasets/Prasanna
+    dataroot_lq: datasets/Prasanna
+    meta_info: datasets/Prasanna/meta_info_Prasannawithface_pair_512_1024.txt
     io_backend:
       type: disk
 
@@ -30,7 +30,7 @@ datasets:
     # data loader
     use_shuffle: true
     num_worker_per_gpu: 8
-    batch_size_per_gpu: 2
+    batch_size_per_gpu: 1
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
@@ -51,6 +51,7 @@ network_g:
   num_feat: 64
   num_block: 6
   num_grow_ch: 32
+  scale: 2
 
 network_d:
   type: UNetDiscriminatorSN
@@ -63,7 +64,7 @@ path:
   # use the pre-trained Real-ESRNet model
   pretrain_network_g: experiments/pretrained_models/RealESRGAN_x4plus_anime_6B.pth
   param_key_g: params_ema
-  strict_load_g: true
+  strict_load_g: false
   pretrain_network_d: experiments/pretrained_models/RealESRGAN_x4plus_netD.pth
   param_key_d: params
   strict_load_d: true

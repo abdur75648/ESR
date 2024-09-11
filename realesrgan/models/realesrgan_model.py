@@ -180,6 +180,7 @@ class RealESRGANModel(SRGANModel):
             if 'gt' in data:
                 self.gt = data['gt'].to(self.device)
                 self.gt_usm = self.usm_sharpener(self.gt)
+                self.coords = data['coords']
 
     def nondist_validation(self, dataloader, current_iter, tb_logger, save_img):
         # do not use the synthetic process during validation
@@ -220,7 +221,7 @@ class RealESRGANModel(SRGANModel):
                 loss_dict['l_g_pix'] = l_g_pix
             # perceptual loss
             if self.cri_perceptual:
-                l_g_percep, l_g_style = self.cri_perceptual(self.output, percep_gt)
+                l_g_percep, l_g_style = self.cri_perceptual(self.output, percep_gt, self.coords)
                 if l_g_percep is not None:
                     l_g_total += l_g_percep
                     loss_dict['l_g_percep'] = l_g_percep
