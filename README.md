@@ -16,6 +16,13 @@ export PYTHONPATH=./
 * Prepare a low-resolution video using `generate_multiscale_data.py` script
 * Prepare a meta info file `datasets/${VIDEO_ID}/meta_info_file.txt` using `scripts/generate_meta_info_withface_pairdata.py` script (if you want to use VGG-Face perceptual loss)/`scripts/generate_meta_info_pairdata.py` script (if you don't want to use VGG-Face perceptual loss)
 * Create a copy of the configuration file `options/Best_Anime_x4.yml`/`options/Best_Anime_x2.yml` and modify the `name`, `dataroot_gt`, `dataroot_lq`, and `meta_info` accordingly
+* Download generator and discriminator pretrained models (from [releases](https://github.com/xinntao/Real-ESRGAN/releases)) using commands like these:
+```bash
+wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth
+mv RealESRGAN_x4plus_anime_6B.pth experiments/pretrained_models/
+wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.3/RealESRGAN_x4plus_netD.pth
+mv RealESRGAN_x4plus_netD.pth experiments/pretrained_models/
+```
 
 ### Training Commands
 **4x Model**

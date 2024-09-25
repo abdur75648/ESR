@@ -1,5 +1,6 @@
 # ignored folders
 datasets/*
+!.gitkeep
 experiments/*
 results/*
 tb_logger/*

@@ -25,7 +25,7 @@ def process_image(args):
         x, y, w, h = faces[0]  # Take the first detected face
         return f'{img_name_gt}, {img_name_lq}, {x}, {y}, {w}, {h}'
     else:
-        return f'{img_name_gt}, {img_name_lq}, No face detected'
+        return None
 
 def main(args):
     # Prepare the file paths
@@ -40,13 +40,15 @@ def main(args):
     tasks = [(img_path_gt, img_path_lq, args.root[0], args.root[1]) for img_path_gt, img_path_lq in zip(img_paths_gt, img_paths_lq)]
 
     # Use all available CPU cores for multiprocessing
+    # cpu_count = min(32,os.cpu_count())
     with Pool(cpu_count()) as p:
         results = list(tqdm(p.imap(process_image, tasks), total=len(tasks)))
 
     # Write the results to a text file
     with open(args.meta_info_file, 'w') as txt_file:
         for result in results:
-            txt_file.write(result + '\n')
+            if result is not None:
+                txt_file.write(result + '\n')
 
 
 if __name__ == '__main__':
